@@ -1,4 +1,5 @@
 const express = require('express');
+const { createProxyMiddleware } = require('http-proxy-middleware');
 const authMiddleware = require('./middlewares/auth');
 
 class App {
@@ -9,20 +10,29 @@ class App {
   }
 
   middlewares() {
-    // Gelen JSON verilerini parse et
-    this.app.use(express.json());
-    
-    // Auth Middleware global proxy çağrılarında veya custom route'larda kontrol sağlar.
-    // Şimdilik TDD için gelen her isteğe yetkilendirme katmanını ekledik.
+    // Auth Middleware global proxy çağrılarında yetkilendirme sağlar.
+    // Mikroservislere (Event ve Ticket) giden tüm istekler bu middleware'den geçer.
     this.app.use(authMiddleware.verifyToken);
   }
 
   routes() {
-    // İleride HTTP Proxy Middleware (Event Service, Ticket Service) ayarlanacak.
-    // Şimdilik TDD Auth testini test etmek için örnek endpont:
-    this.app.get('/api/events', (req, res) => {
-      res.status(200).json({ message: 'Success! You have a valid token.' });
-    });
+    // Event Service Proxy
+    this.app.use(
+      '/api/events',
+      createProxyMiddleware({
+        target: 'http://event-service:4000',
+        changeOrigin: true,
+      })
+    );
+
+    // Ticket Service Proxy
+    this.app.use(
+      '/api/tickets',
+      createProxyMiddleware({
+        target: 'http://ticket-service:5000',
+        changeOrigin: true,
+      })
+    );
   }
 
   // Redis instance'ının test sonrası serbest bırakılması (Jest asılı kalmasın diye)
