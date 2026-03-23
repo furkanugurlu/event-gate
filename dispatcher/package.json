@@ -1,0 +1,30 @@
+{
+  "name": "dispatcher",
+  "version": "1.0.0",
+  "description": "API Gateway / Dispatcher service for EventGate",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "jest --watchAll=false --forceExit",
+    "test:coverage": "jest --watchAll=false --forceExit --coverage"
+  },
+  "keywords": ["eventgate", "dispatcher", "api-gateway"],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "jest": {
+    "testEnvironment": "node",
+    "verbose": true,
+    "testMatch": ["**/__tests__/**/*.test.js"]
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "http-proxy-middleware": "^3.0.5",
+    "ioredis": "^5.10.1"
+  },
+  "devDependencies": {
+    "jest": "^30.3.0",
+    "supertest": "^7.2.2"
+  }
+}
