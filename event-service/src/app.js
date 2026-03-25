@@ -2,133 +2,49 @@ const express = require('express');
 const mongoose = require('mongoose');
 const Event = require('./models/Event');
 
-const app = express();
-app.use(express.json());
+const EventRepository = require('./repositories/EventRepository');
+const EventService = require('./services/EventService');
+const EventController = require('./controllers/EventController');
+const EventRouter = require('./routes/EventRouter');
 
-// Veritabanı (MongoDB) Bağlantısı
-// Mikroservis izolasyonunda (Docker vs) environment'den çekeceğiz.
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/event-db';
-
-mongoose.connect(MONGO_URI)
-  .then(() => console.log('[Event Service] connected to MongoDB (event-db)'))
-  .catch((err) => console.error('[Event Service] MongoDB connection error:', err));
-
-// ==========================================
-// RRM SEVİYE 2 RESTful ENDPOINTLER (Resource: /events)
-// ==========================================
-
-// GET /api/events : Tüm event'leri listeler
-app.get('/api/events', async (req, res) => {
-  try {
-    const events = await Event.find({});
+class App {
+  constructor() {
+    this.app = express();
+    this.app.use(express.json());
     
-    // RMM Seviye 3: HATEOAS
-    const eventsResponse = events.map(event => {
-      const eventObj = event.toJSON();
-      eventObj._links = {
-        self: `/api/events/${event._id}`,
-        book_ticket: `/api/tickets`
-      };
-      return eventObj;
+    this.connectDatabase();
+    this.setupDependencies();
+  }
+
+  connectDatabase() {
+    const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/event-db';
+    mongoose.connect(MONGO_URI)
+      .then(() => console.log('[Event Service] connected to MongoDB (event-db)'))
+      .catch((err) => console.error('[Event Service] MongoDB connection error:', err));
+  }
+
+  setupDependencies() {
+    // Dependency Injection
+    const repository = new EventRepository(Event);
+    const service = new EventService(repository);
+    const controller = new EventController(service);
+    const router = new EventRouter(controller);
+
+    this.app.use('/api/events', router.getRouter());
+  }
+
+  start() {
+    const PORT = process.env.PORT || 4000;
+    this.app.listen(PORT, () => {
+      console.log(`[Event Service] listening on port ${PORT}`);
     });
-
-    // 200 OK
-    res.status(200).json(eventsResponse);
-  } catch (error) {
-    // 500 Internal Server Error
-    console.error('Error fetching events:', error);
-    res.status(500).json({ error: 'Server error while fetching content' });
   }
-});
-
-// POST /api/events : Yeni event oluşturur
-app.post('/api/events', async (req, res) => {
-  try {
-    const { name, date, capacity } = req.body;
-
-    // Şema validasyon öncesi manuel 400 Bad Request durumu kontrolü (isteğe bağlı)
-    if (!name || !date || !capacity) {
-      return res.status(400).json({ error: 'Missing required parameters: name, date, capacity' });
-    }
-
-    const newEvent = await Event.create({ name, date, capacity });
-    
-    // RMM Seviye 3: HATEOAS
-    const eventResponse = newEvent.toJSON();
-    eventResponse._links = {
-      self: `/api/events/${newEvent._id}`,
-      book_ticket: `/api/tickets`
-    };
-
-    // 201 Created
-    res.status(201).json(eventResponse);
-  } catch (error) {
-    // MongoDB validasyonunda veya body/casting hatalarında 400 Bad Request
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({ error: error.message });
-    }
-    // Diğer sunucu tabanlı hatalar 500
-    res.status(500).json({ error: 'Failed to create event' });
-  }
-});
-
-// GET /api/events/:id : Spesifik bir id'deki event'i getirir
-app.get('/api/events/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const event = await Event.findById(id);
-
-    if (!event) {
-      return res.status(404).json({ error: `Event with id ${id} not found` });
-    }
-
-    const eventResponse = event.toJSON();
-    eventResponse._links = {
-      self: `/api/events/${event._id}`,
-      book_ticket: `/api/tickets`
-    };
-
-    res.status(200).json(eventResponse);
-  } catch (error) {
-    if (error.kind === 'ObjectId') {
-      return res.status(400).json({ error: 'Invalid ID format' });
-    }
-    res.status(500).json({ error: 'Failed to fetch event details' });
-  }
-});
-
-// DELETE /api/events/:id : Spesifik bir id'deki event'i siler
-app.delete('/api/events/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // Önce o kaynağın gerçekten var olup olmadığını kontrol ediyoruz, yoksa 404 döner.
-    const deletedEvent = await Event.findByIdAndDelete(id);
-
-    if (!deletedEvent) {
-      // 404 Not Found (kaynak zaten yok/bulunamadı)
-      return res.status(404).json({ error: `Event with id ${id} not found` });
-    }
-
-    // 204 No Content (silme işlemi başarıyla tamamlandı, body dahil edilmez)
-    // JSON response body si döndürülmek isteniyorsa 200 döner, fakat standart restful yaklaşımlarda silme sonrası body boş 204 gönderilmesi yaygındır.
-    res.status(204).send();
-  } catch (error) {
-    // ID formati hatalıysa (Örn: 12 karakterlik ObjectId yerine baska bir sey)
-    if (error.kind === 'ObjectId') {
-      return res.status(400).json({ error: 'Invalid ID format' });
-    }
-    res.status(500).json({ error: 'Failed to delete event' });
-  }
-});
-
-// Eğer modül doğrudan çalıştırılıyorsa listener başlat 
-if (require.main === module) {
-  const PORT = process.env.PORT || 4000;
-  app.listen(PORT, () => {
-    console.log(`[Event Service] listening on port ${PORT}`);
-  });
 }
 
-// Test vs için export yapıyoruz
-module.exports = app;
+const appInstance = new App();
+
+if (require.main === module) {
+  appInstance.start();
+}
+
+module.exports = appInstance.app;

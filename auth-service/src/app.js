@@ -1,69 +1,43 @@
 const express = require('express');
 const Redis = require('ioredis');
-const crypto = require('crypto');
 
-class AuthController {
+const AuthRepository = require('./repositories/AuthRepository');
+const AuthService = require('./services/AuthService');
+const AuthController = require('./controllers/AuthController');
+const AuthRouter = require('./routes/AuthRouter');
+
+class App {
   constructor() {
-    this.redisClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
     this.app = express();
     this.app.use(express.json());
-
-    // Bind methods for Express routes
-    this.login = this.login.bind(this);
     
-    // Setup routes
-    this.setupRoutes();
+    this.setupDependencies();
   }
 
-  setupRoutes() {
-    // Basic login endpoint
-    this.app.post('/api/auth/login', this.login);
+  setupDependencies() {
+    const redisClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
     
-    // Health check
-    this.app.get('/health', (req, res) => res.status(200).send('OK'));
+    // Dependency Injection
+    const repository = new AuthRepository(redisClient);
+    const service = new AuthService(repository);
+    const controller = new AuthController(service);
+    const router = new AuthRouter(controller);
+
+    this.app.use('/api/auth', router.getRouter());
   }
 
-  async login(req, res) {
-    try {
-      const { username, password } = req.body;
-
-      // Dummy validation for demo purposes. 
-      // Replace with Database validation logic in real world.
-      if (!username || !password) {
-        return res.status(400).json({ error: 'Username and password are required' });
-      }
-
-      if (username === 'admin' && password === '1234') {
-        const token = crypto.randomBytes(32).toString('hex');
-        
-        // Save Token to Redis with 1 hour Expiration (3600 seconds)
-        await this.redisClient.set(`auth:${token}`, username, 'EX', 3600);
-        
-        return res.status(200).json({ 
-          message: 'Login successful',
-          token 
-        });
-      }
-
-      return res.status(401).json({ error: 'Invalid credentials' });
-    } catch (error) {
-      console.error('[Auth Service] Login error:', error);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  }
-
-  start(port) {
-    this.server = this.app.listen(port, () => {
-      console.log(`[Auth Service] started on port ${port}`);
+  start() {
+    const PORT = process.env.PORT || 4000;
+    this.server = this.app.listen(PORT, () => {
+      console.log(`[Auth Service] started on port ${PORT}`);
     });
   }
 }
 
-const authService = new AuthController();
+const appInstance = new App();
 
 if (require.main === module) {
-  const PORT = process.env.PORT || 4000;
-  authService.start(PORT);
+  appInstance.start();
 }
 
-module.exports = authService.app;
+module.exports = appInstance.app;
