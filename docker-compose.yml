@@ -23,6 +23,18 @@ services:
       - ticket_mongo_data:/data/db
 
   # Microservices
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: ../Dockerfile
+    environment:
+      - PORT=3000
+      - REDIS_URL=redis://redis:6379
+    networks:
+      - internal
+    depends_on:
+      - redis
+
   dispatcher:
     build:
       context: ./dispatcher
