@@ -21,8 +21,19 @@ mongoose.connect(MONGO_URI)
 app.get('/api/events', async (req, res) => {
   try {
     const events = await Event.find({});
+    
+    // RMM Seviye 3: HATEOAS
+    const eventsResponse = events.map(event => {
+      const eventObj = event.toJSON();
+      eventObj._links = {
+        self: `/api/events/${event._id}`,
+        book_ticket: `/api/tickets`
+      };
+      return eventObj;
+    });
+
     // 200 OK
-    res.status(200).json(events);
+    res.status(200).json(eventsResponse);
   } catch (error) {
     // 500 Internal Server Error
     console.error('Error fetching events:', error);
@@ -41,8 +52,16 @@ app.post('/api/events', async (req, res) => {
     }
 
     const newEvent = await Event.create({ name, date, capacity });
+    
+    // RMM Seviye 3: HATEOAS
+    const eventResponse = newEvent.toJSON();
+    eventResponse._links = {
+      self: `/api/events/${newEvent._id}`,
+      book_ticket: `/api/tickets`
+    };
+
     // 201 Created
-    res.status(201).json(newEvent);
+    res.status(201).json(eventResponse);
   } catch (error) {
     // MongoDB validasyonunda veya body/casting hatalarında 400 Bad Request
     if (error.name === 'ValidationError') {
@@ -50,6 +69,31 @@ app.post('/api/events', async (req, res) => {
     }
     // Diğer sunucu tabanlı hatalar 500
     res.status(500).json({ error: 'Failed to create event' });
+  }
+});
+
+// GET /api/events/:id : Spesifik bir id'deki event'i getirir
+app.get('/api/events/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const event = await Event.findById(id);
+
+    if (!event) {
+      return res.status(404).json({ error: `Event with id ${id} not found` });
+    }
+
+    const eventResponse = event.toJSON();
+    eventResponse._links = {
+      self: `/api/events/${event._id}`,
+      book_ticket: `/api/tickets`
+    };
+
+    res.status(200).json(eventResponse);
+  } catch (error) {
+    if (error.kind === 'ObjectId') {
+      return res.status(400).json({ error: 'Invalid ID format' });
+    }
+    res.status(500).json({ error: 'Failed to fetch event details' });
   }
 });
 

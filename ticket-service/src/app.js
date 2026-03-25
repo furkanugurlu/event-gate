@@ -51,8 +51,15 @@ app.post('/api/tickets', async (req, res) => {
     // 3) Bilet nesnesini yarat (Capacity Update işlemi burada asenkrom bir RabbitMQ mesajıyla event servise ileriki adımlarda bildirilebilir)
     const newTicket = await Ticket.create({ kullanici_id, event_id });
 
+    // RMM Seviye 3: HATEOAS
+    const ticketResponse = newTicket.toJSON();
+    ticketResponse._links = {
+      self: `/api/tickets/${newTicket._id}`,
+      event: `/api/events/${event_id}`
+    };
+
     // 201 Created
-    res.status(201).json(newTicket);
+    res.status(201).json(ticketResponse);
   } catch (error) {
     if (error.name === 'ValidationError') {
       return res.status(400).json({ error: error.message });
