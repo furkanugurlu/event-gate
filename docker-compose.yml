@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  # Cache layer
+  redis:
+    image: redis:7-alpine
+    networks:
+      - internal
+
+  # Databases
+  event-mongo:
+    image: mongo:6
+    networks:
+      - internal
+    volumes:
+      - event_mongo_data:/data/db
+
+  ticket-mongo:
+    image: mongo:6
+    networks:
+      - internal
+    volumes:
+      - ticket_mongo_data:/data/db
+
+  # Microservices
+  dispatcher:
+    build:
+      context: ./dispatcher
+      dockerfile: ../Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - REDIS_URL=redis://redis:6379
+      - EVENT_SERVICE_URL=http://event-service:3000
+      - TICKET_SERVICE_URL=http://ticket-service:3000
+    networks:
+      - internal
+    depends_on:
+      - redis
+      - event-service
+      - ticket-service
+
+  event-service:
+    build:
+      context: ./event-service
+      dockerfile: ../Dockerfile
+    environment:
+      - PORT=3000
+      - MONGO_URI=mongodb://event-mongo:27017/event-db
+    networks:
+      - internal
+    depends_on:
+      - event-mongo
+
+  ticket-service:
+    build:
+      context: ./ticket-service
+      dockerfile: ../Dockerfile
+    environment:
+      - PORT=3000
+      - MONGO_URI=mongodb://ticket-mongo:27017/ticket-db
+      - EVENT_SERVICE_URL=http://event-service:3000
+    networks:
+      - internal
+    depends_on:
+      - ticket-mongo
+      - event-service
+
+  # Monitoring / UI
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  event_mongo_data:
+  ticket_mongo_data:
