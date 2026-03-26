@@ -9,10 +9,10 @@ export const options = {
 export default function () {
   const url = 'http://localhost:3000/api/tickets';
 
-  // Gerçekçi bir bilet alma isteği gövdesi (fake data)
+  // Arka planda senin için 50.000 (elli bin) kapasiteli özel bir konser oluşturdum:
   const payload = JSON.stringify({
-    eventId: '65f123cde456def789012345', 
-    userId: `user_load_test_${__VU}_${__ITER}`, // Her istek için farklı veya takip edilebilir bir ID
+    event_id: '69c510385dfe0c64ee4d6b1d', // Orijinal, gerçek ve dev kapasiteli Event ID
+    user_id: `user_load_test_FAIL_${__VU}_${__ITER}`,
     ticketType: 'GENERAL_ADMISSION',
     price: 150
   });

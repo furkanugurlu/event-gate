@@ -98,10 +98,49 @@ services:
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning
       - ./grafana/dashboards:/etc/grafana/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - internal
+
+  # --- Veritabanı İzleme (UI) Araçları ---
+  event-mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://event-mongo:27017/event-db
+      ME_CONFIG_BASICAUTH: false
     networks:
       - internal
     depends_on:
-      - prometheus
+      - event-mongo
+
+  ticket-mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - "8082:8081"
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://ticket-mongo:27017/ticket-db
+      ME_CONFIG_BASICAUTH: false
+    networks:
+      - internal
+    depends_on:
+      - ticket-mongo
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    restart: always
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8083:8081"
+    networks:
+      - internal
+    depends_on:
+      - redis
 
 networks:
   internal:
