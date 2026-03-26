@@ -8,6 +8,7 @@ class AuthRouter {
   }
 
   initializeRoutes() {
+    this.router.post('/register', this.controller.register);
     this.router.post('/login', this.controller.login);
     this.router.get('/health', (req, res) => res.status(200).send('OK'));
   }
