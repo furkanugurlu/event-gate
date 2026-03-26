@@ -10,6 +10,14 @@ class TicketRepository {
   async findAll() {
     return await this.model.find({});
   }
+
+  async deleteById(id) {
+    return await this.model.findByIdAndDelete(id);
+  }
+
+  async deleteAll() {
+    return await this.model.deleteMany({});
+  }
 }
 
 module.exports = TicketRepository;

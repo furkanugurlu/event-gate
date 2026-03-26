@@ -7,6 +7,7 @@ class EventController {
     this.getEventById = this.getEventById.bind(this);
     this.createEvent = this.createEvent.bind(this);
     this.deleteEvent = this.deleteEvent.bind(this);
+    this.deleteAllEvents = this.deleteAllEvents.bind(this);
   }
 
   async getAllEvents(req, res) {
@@ -53,6 +54,11 @@ class EventController {
 
   async createEvent(req, res) {
     try {
+      // Role Based Access Control (RBAC) - Sadece Admin etkinlik yaratabilir
+      if (req.headers['x-user-role'] !== 'admin') {
+        return res.status(403).json({ error: 'Forbidden: Admins only can create events' });
+      }
+
       const newEvent = await this.service.createEvent(req.body);
       
       const eventResponse = newEvent.toJSON();
@@ -72,6 +78,11 @@ class EventController {
 
   async deleteEvent(req, res) {
     try {
+      // Sadece Admin silebilir
+      if (req.headers['x-user-role'] !== 'admin') {
+        return res.status(403).json({ error: 'Forbidden: Admins only can delete events' });
+      }
+
       await this.service.deleteEvent(req.params.id);
       res.status(204).send();
     } catch (error) {
@@ -82,6 +93,21 @@ class EventController {
         return res.status(404).json({ error: `Event with id ${req.params.id} not found` });
       }
       res.status(500).json({ error: 'Failed to delete event' });
+    }
+  }
+
+  async deleteAllEvents(req, res) {
+    try {
+      // Sadece Admin temizleyebilir
+      if (req.headers['x-user-role'] !== 'admin') {
+        return res.status(403).json({ error: 'Forbidden: Admins only can clear events' });
+      }
+
+      await this.service.deleteAllEvents();
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error clearing events:', error);
+      res.status(500).json({ error: 'Failed to clear database' });
     }
   }
 }

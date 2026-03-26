@@ -30,6 +30,10 @@ class EventService {
     }
     return deletedEvent;
   }
+
+  async deleteAllEvents() {
+    return await this.repository.deleteAll();
+  }
 }
 
 module.exports = EventService;

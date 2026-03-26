@@ -18,6 +18,10 @@ class EventRepository {
   async deleteById(id) {
     return await this.model.findByIdAndDelete(id);
   }
+
+  async deleteAll() {
+    return await this.model.deleteMany({});
+  }
 }
 
 module.exports = EventRepository;

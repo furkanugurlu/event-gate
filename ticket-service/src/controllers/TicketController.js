@@ -5,6 +5,8 @@ class TicketController {
     // Bind methods
     this.createTicket = this.createTicket.bind(this);
     this.getAllTickets = this.getAllTickets.bind(this);
+    this.deleteTicket = this.deleteTicket.bind(this);
+    this.deleteAllTickets = this.deleteAllTickets.bind(this);
   }
 
   async createTicket(req, res) {
@@ -42,6 +44,40 @@ class TicketController {
       res.status(200).json(tickets);
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch tickets' });
+    }
+  }
+
+  async deleteTicket(req, res) {
+    try {
+      // Role Check
+      if (req.headers['x-user-role'] !== 'admin') {
+        return res.status(403).json({ error: 'Forbidden: Admins only' });
+      }
+
+      await this.service.deleteTicket(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      if (error.kind === 'ObjectId') {
+        return res.status(400).json({ error: 'Invalid ID format' });
+      }
+      if (error.message === 'TicketNotFound') {
+        return res.status(404).json({ error: 'Ticket not found' });
+      }
+      res.status(500).json({ error: 'Failed to delete ticket' });
+    }
+  }
+
+  async deleteAllTickets(req, res) {
+    try {
+       // Role Check
+       if (req.headers['x-user-role'] !== 'admin') {
+        return res.status(403).json({ error: 'Forbidden: Admins only' });
+      }
+
+      await this.service.deleteAllTickets();
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to clear tickets' });
     }
   }
 }

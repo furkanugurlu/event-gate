@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
 
 const TicketSchema = new mongoose.Schema({
-  kullanici_id: {
+  user_id: {
     type: String,
-    required: [true, 'kullanici_id is required']
+    required: [true, 'user_id is required']
   },
   event_id: {
     type: String, // Event service'den gelen data string/objectId formatında olabilir
