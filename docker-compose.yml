@@ -80,12 +80,28 @@ services:
       - event-service
 
   # Monitoring / UI
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    networks:
+      - internal
+    depends_on:
+      - dispatcher
+
   grafana:
     image: grafana/grafana:latest
     ports:
       - "3001:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/etc/grafana/dashboards
     networks:
       - internal
+    depends_on:
+      - prometheus
 
 networks:
   internal:
