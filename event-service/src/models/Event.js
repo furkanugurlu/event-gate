@@ -14,6 +14,12 @@ const EventSchema = new mongoose.Schema({
     type: Number,
     required: [true, 'Capacity is required'],
     min: [1, 'Capacity must be at least 1']
+  },
+  // Etkinlik türü: Notification Service'in ilgili kullanıcıları filtrelemesi için kullanılır
+  type: {
+    type: String,
+    enum: ['concert', 'theater', 'opera', 'festival', 'sports'],
+    required: [true, 'Event type is required']
   }
 }, {
   timestamps: true,

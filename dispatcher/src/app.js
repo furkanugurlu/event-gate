@@ -87,6 +87,24 @@ class App {
         pathFilter: '/api/tickets'
       })
     );
+
+    // Notification Service Proxy — TDD GREEN ✅
+    this.app.use(
+      createProxyMiddleware({
+        target: process.env.NOTIFICATION_SERVICE_URL || 'http://notification-service:3000',
+        changeOrigin: true,
+        pathFilter: '/api/notifications'
+      })
+    );
+
+    // User Profile Service Proxy — TDD GREEN ✅
+    this.app.use(
+      createProxyMiddleware({
+        target: process.env.USER_PROFILE_SERVICE_URL || 'http://user-profile-service:3000',
+        changeOrigin: true,
+        pathFilter: '/api/users'
+      })
+    );
   }
 
   async cleanup() {

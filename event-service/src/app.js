@@ -1,5 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const axios = require('axios');
 const Event = require('./models/Event');
 
 const EventRepository = require('./repositories/EventRepository');
@@ -26,7 +27,7 @@ class App {
   setupDependencies() {
     // Dependency Injection
     const repository = new EventRepository(Event);
-    const service = new EventService(repository);
+    const service = new EventService(repository, axios);
     const controller = new EventController(service);
     const router = new EventRouter(controller);
 

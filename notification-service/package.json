@@ -1,11 +1,10 @@
 {
-  "name": "event-service",
+  "name": "notification-service",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Notification microservice for EventGate",
+  "main": "src/app.js",
   "scripts": {
-    "start": "node src/app.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/app.js"
   },
   "keywords": [],
   "author": "",

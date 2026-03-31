@@ -1,13 +1,20 @@
 version: '3.8'
 
 services:
-  # Cache layer
+  # ── Cache Katmanları ──────────────────────────────────────────────────────
+  # Auth Service'in oturum deposu
   redis:
     image: redis:7-alpine
     networks:
       - internal
 
-  # Databases
+  # Dispatcher'ın token doğrulama deposu — auth-service'den tamamen izole
+  dispatcher-redis:
+    image: redis:7-alpine
+    networks:
+      - internal
+
+  # ── Veritabanları ─────────────────────────────────────────────────────────
   event-mongo:
     image: mongo:6
     networks:
@@ -22,7 +29,21 @@ services:
     volumes:
       - ticket_mongo_data:/data/db
 
-  # Microservices
+  notification-mongo:
+    image: mongo:6
+    networks:
+      - internal
+    volumes:
+      - notification_mongo_data:/data/db
+
+  userprofile-mongo:
+    image: mongo:6
+    networks:
+      - internal
+    volumes:
+      - userprofile_mongo_data:/data/db
+
+  # ── Mikroservisler ────────────────────────────────────────────────────────
   auth-service:
     build:
       context: ./auth-service
@@ -43,15 +64,22 @@ services:
       - "3000:3000"
     environment:
       - PORT=3000
-      - REDIS_URL=redis://redis:6379
+      # dispatcher-redis: auth-service'den izole ayrı Redis örneği
+      - REDIS_URL=redis://dispatcher-redis:6379
+      - AUTH_SERVICE_URL=http://auth-service:3000
       - EVENT_SERVICE_URL=http://event-service:3000
       - TICKET_SERVICE_URL=http://ticket-service:3000
+      - NOTIFICATION_SERVICE_URL=http://notification-service:3000
+      - USER_PROFILE_SERVICE_URL=http://user-profile-service:3000
     networks:
       - internal
     depends_on:
-      - redis
+      - dispatcher-redis
+      - auth-service
       - event-service
       - ticket-service
+      - notification-service
+      - user-profile-service
 
   event-service:
     build:
@@ -60,10 +88,12 @@ services:
     environment:
       - PORT=3000
       - MONGO_URI=mongodb://event-mongo:27017/event-db
+      - NOTIFICATION_SERVICE_URL=http://notification-service:3000
     networks:
       - internal
     depends_on:
       - event-mongo
+      - notification-service
 
   ticket-service:
     build:
@@ -73,13 +103,43 @@ services:
       - PORT=3000
       - MONGO_URI=mongodb://ticket-mongo:27017/ticket-db
       - EVENT_SERVICE_URL=http://event-service:3000
+      - USER_PROFILE_SERVICE_URL=http://user-profile-service:3000
+      - NOTIFICATION_SERVICE_URL=http://notification-service:3000
     networks:
       - internal
     depends_on:
       - ticket-mongo
       - event-service
+      - user-profile-service
+      - notification-service
 
-  # Monitoring / UI
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: ../Dockerfile
+    environment:
+      - PORT=3000
+      - MONGO_URI=mongodb://notification-mongo:27017/notification-db
+      - USER_PROFILE_SERVICE_URL=http://user-profile-service:3000
+    networks:
+      - internal
+    depends_on:
+      - notification-mongo
+      - user-profile-service
+
+  user-profile-service:
+    build:
+      context: ./user-profile-service
+      dockerfile: ../Dockerfile
+    environment:
+      - PORT=3000
+      - MONGO_URI=mongodb://userprofile-mongo:27017/userprofile-db
+    networks:
+      - internal
+    depends_on:
+      - userprofile-mongo
+
+  # ── İzleme / Monitoring ───────────────────────────────────────────────────
   prometheus:
     image: prom/prometheus:latest
     volumes:
@@ -103,7 +163,7 @@ services:
     networks:
       - internal
 
-  # --- Veritabanı İzleme (UI) Araçları ---
+  # ── Veritabanı UI Araçları ────────────────────────────────────────────────
   event-mongo-express:
     image: mongo-express
     restart: always
@@ -130,17 +190,44 @@ services:
     depends_on:
       - ticket-mongo
 
+  notification-mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - "8084:8081"
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://notification-mongo:27017/notification-db
+      ME_CONFIG_BASICAUTH: false
+    networks:
+      - internal
+    depends_on:
+      - notification-mongo
+
+  userprofile-mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - "8085:8081"
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://userprofile-mongo:27017/userprofile-db
+      ME_CONFIG_BASICAUTH: false
+    networks:
+      - internal
+    depends_on:
+      - userprofile-mongo
+
   redis-commander:
     image: rediscommander/redis-commander:latest
     restart: always
     environment:
-      - REDIS_HOSTS=local:redis:6379
+      - REDIS_HOSTS=auth-redis:redis:6379,dispatcher-redis:dispatcher-redis:6379
     ports:
       - "8083:8081"
     networks:
       - internal
     depends_on:
       - redis
+      - dispatcher-redis
 
 networks:
   internal:
@@ -149,3 +236,5 @@ networks:
 volumes:
   event_mongo_data:
   ticket_mongo_data:
+  notification_mongo_data:
+  userprofile_mongo_data:

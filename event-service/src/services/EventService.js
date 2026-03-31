@@ -1,6 +1,7 @@
 class EventService {
-  constructor(eventRepository) {
+  constructor(eventRepository, axiosInstance) {
     this.repository = eventRepository;
+    this.axios = axiosInstance;
   }
 
   async getAllEvents() {
@@ -16,11 +17,33 @@ class EventService {
   }
 
   async createEvent(data) {
-    const { name, date, capacity } = data;
-    if (!name || !date || !capacity) {
+    const { name, date, capacity, type } = data;
+    if (!name || !date || !capacity || !type) {
       throw new Error('ValidationError');
     }
-    return await this.repository.create({ name, date, capacity });
+
+    const newEvent = await this.repository.create({ name, date, capacity, type });
+
+    // Yeni etkinlik oluşturulunca Notification Service'e bildir (fire-and-forget)
+    // Bildirim başarısız olsa bile etkinlik oluşturma işlemi tamamlanır
+    const NOTIFICATION_SERVICE_URL =
+      process.env.NOTIFICATION_SERVICE_URL || 'http://notification-service:3000';
+
+    this.axios
+      .post(`${NOTIFICATION_SERVICE_URL}/api/notifications`, {
+        eventId: String(newEvent._id),
+        eventType: type,
+        eventName: name,
+        type: 'NEW_EVENT'
+      })
+      .then(() =>
+        console.log(`[Event Service] NEW_EVENT bildirimi gönderildi (${type}): ${name}`)
+      )
+      .catch(err =>
+        console.warn(`[Event Service] Bildirim gönderilemedi (sisteme etkisi yok): ${err.message}`)
+      );
+
+    return newEvent;
   }
 
   async deleteEvent(id) {

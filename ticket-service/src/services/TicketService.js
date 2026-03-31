@@ -30,7 +30,44 @@ class TicketService {
       throw new Error('CapacityError');
     }
 
-    return await this.repository.create({ user_id, event_id });
+    const newTicket = await this.repository.create({ user_id, event_id });
+
+    const eventType = event.type || null;
+
+    const USER_PROFILE_SERVICE_URL =
+      process.env.USER_PROFILE_SERVICE_URL || 'http://user-profile-service:3000';
+    const NOTIFICATION_SERVICE_URL =
+      process.env.NOTIFICATION_SERVICE_URL || 'http://notification-service:3000';
+
+    // UserProfile güncelle: kullanıcının satın aldığı tür geçmişine ekle (fire-and-forget)
+    if (eventType) {
+      this.axios
+        .put(`${USER_PROFILE_SERVICE_URL}/api/users/${user_id}`, { eventType })
+        .then(() =>
+          console.log(`[Ticket Service] Kullanıcı profili güncellendi: ${user_id} → ${eventType}`)
+        )
+        .catch(err =>
+          console.warn(`[Ticket Service] Profil güncellenemedi (sisteme etkisi yok): ${err.message}`)
+        );
+    }
+
+    // Bildirim oluştur: bilet satın alma kaydını logla (fire-and-forget)
+    this.axios
+      .post(`${NOTIFICATION_SERVICE_URL}/api/notifications`, {
+        userId: user_id,
+        eventId: event_id,
+        ticketId: String(newTicket._id),
+        eventType,
+        type: 'TICKET_PURCHASED'
+      })
+      .then(() =>
+        console.log(`[Ticket Service] TICKET_PURCHASED bildirimi oluşturuldu: ${newTicket._id}`)
+      )
+      .catch(err =>
+        console.warn(`[Ticket Service] Bildirim oluşturulamadı (sisteme etkisi yok): ${err.message}`)
+      );
+
+    return newTicket;
   }
 
   async getAllTickets() {
