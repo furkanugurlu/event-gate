@@ -18,7 +18,8 @@ class EventService {
 
   async createEvent(data) {
     const { name, date, capacity, type } = data;
-    if (!name || !date || !capacity || !type) {
+    const validTypes = ['concert', 'theater', 'opera', 'festival', 'sports'];
+    if (!name || !date || !capacity || !type || !validTypes.includes(type)) {
       throw new Error('ValidationError');
     }
 

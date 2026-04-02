@@ -41,9 +41,10 @@ describe('NotificationService.createTicketNotification', () => {
       .rejects.toThrow('ValidationError');
   });
 
-  test('ticketId eksikse ValidationError fırlatır', async () => {
-    await expect(service.createTicketNotification({ userId: 'u1', eventId: 'e1', eventType: 'theater' }))
-      .rejects.toThrow('ValidationError');
+  test('ticketId olmadan da bildirim oluşturur (opsiyonel alan)', async () => {
+    mockRepo.create.mockResolvedValue({ userId: 'u1', eventId: 'e1', ticketId: null, status: 'SENT' });
+    const result = await service.createTicketNotification({ userId: 'u1', eventId: 'e1', eventType: 'theater' });
+    expect(result.status).toBe('SENT');
   });
 });
 

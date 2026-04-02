@@ -28,7 +28,8 @@ describe('EventService.createEvent', () => {
 
     const result = await service.createEvent(data);
     expect(result._id).toBe('eid1');
-    expect(mockRepo.create).toHaveBeenCalledWith(data);
+    // price Event modelinde yok, service sadece name/date/capacity/type geçirir
+    expect(mockRepo.create).toHaveBeenCalledWith({ name: data.name, date: data.date, capacity: data.capacity, type: data.type });
   });
 
   test('name eksikse ValidationError fırlatır', async () => {
