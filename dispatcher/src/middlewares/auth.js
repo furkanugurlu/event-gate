@@ -47,6 +47,10 @@ class AuthMiddleware {
         console.log(`[AUTH] Traffic blocked (Token not found): ${req.method} ${req.url}`);
         return res.status(401).json({ error: 'Invalid or expired token' });
       }
+      if (err.status === 503) {
+        console.error('[AUTH] Auth service unavailable:', err.message);
+        return res.status(503).json({ error: 'Authentication service unavailable' });
+      }
       console.error('[AUTH] Auth service verification error:', err);
       return res.status(500).json({ error: 'Internal server error during authentication' });
     }
@@ -60,6 +64,7 @@ class AuthMiddleware {
         port: url.port || 80,
         path: url.pathname,
         method: 'GET',
+        timeout: 3000,
         headers: { Authorization: `Bearer ${token}` }
       };
 
@@ -77,7 +82,18 @@ class AuthMiddleware {
         });
       });
 
-      req.on('error', reject);
+      req.on('timeout', () => {
+        req.destroy();
+        const err = new Error('Auth service timeout');
+        err.status = 503;
+        reject(err);
+      });
+
+      req.on('error', (e) => {
+        e.status = 503;
+        reject(e);
+      });
+
       req.end();
     });
   }

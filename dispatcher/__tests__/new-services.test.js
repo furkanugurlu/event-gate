@@ -61,6 +61,7 @@ describe('Dispatcher New Services Routing (TDD - RED Phase)', () => {
       // GREEN Phase: bu test, proxy route eklendikten sonra 502/504 dönerek geçecek
       const isProxyAttempted =
         response.status === 502 ||
+        response.status === 503 ||
         response.status === 504 ||
         response.status === 500;
 
@@ -75,6 +76,7 @@ describe('Dispatcher New Services Routing (TDD - RED Phase)', () => {
 
       const isProxyAttempted =
         response.status === 502 ||
+        response.status === 503 ||
         response.status === 504 ||
         response.status === 500;
 
@@ -92,6 +94,7 @@ describe('Dispatcher New Services Routing (TDD - RED Phase)', () => {
 
       const isProxyAttempted =
         response.status === 502 ||
+        response.status === 503 ||
         response.status === 504 ||
         response.status === 500;
 
@@ -105,6 +108,7 @@ describe('Dispatcher New Services Routing (TDD - RED Phase)', () => {
 
       const isProxyAttempted =
         response.status === 502 ||
+        response.status === 503 ||
         response.status === 504 ||
         response.status === 500;
 
