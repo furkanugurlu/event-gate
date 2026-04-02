@@ -61,55 +61,31 @@ class App {
     });
   }
 
+  _proxy(target, pathFilter) {
+    return createProxyMiddleware({
+      target,
+      changeOrigin: true,
+      pathFilter,
+      on: {
+        error: (err, req, res) => {
+          console.error(`[PROXY] Service unreachable: ${target} — ${err.message}`);
+          res.status(503).json({ error: 'Service unavailable', service: target });
+        }
+      }
+    });
+  }
+
   routes() {
-    // Auth Service Proxy
-    this.app.use(
-      createProxyMiddleware({
-        target: process.env.AUTH_SERVICE_URL || 'http://auth-service:3000',
-        changeOrigin: true,
-        pathFilter: '/api/auth'
-      })
-    );
-
-    // Event Service Proxy
-    this.app.use(
-      createProxyMiddleware({
-        target: process.env.EVENT_SERVICE_URL || 'http://event-service:4000',
-        changeOrigin: true,
-        pathFilter: '/api/events'
-      })
-    );
-
-    this.app.use(
-      createProxyMiddleware({
-        target: process.env.TICKET_SERVICE_URL || 'http://ticket-service:5000',
-        changeOrigin: true,
-        pathFilter: '/api/tickets'
-      })
-    );
-
-    // Notification Service Proxy — TDD GREEN ✅
-    this.app.use(
-      createProxyMiddleware({
-        target: process.env.NOTIFICATION_SERVICE_URL || 'http://notification-service:3000',
-        changeOrigin: true,
-        pathFilter: '/api/notifications'
-      })
-    );
-
-    // User Profile Service Proxy — TDD GREEN ✅
-    this.app.use(
-      createProxyMiddleware({
-        target: process.env.USER_PROFILE_SERVICE_URL || 'http://user-profile-service:3000',
-        changeOrigin: true,
-        pathFilter: '/api/users'
-      })
-    );
+    this.app.use(this._proxy(process.env.AUTH_SERVICE_URL         || 'http://auth-service:3000',         '/api/auth'));
+    this.app.use(this._proxy(process.env.EVENT_SERVICE_URL        || 'http://event-service:3000',        '/api/events'));
+    this.app.use(this._proxy(process.env.TICKET_SERVICE_URL       || 'http://ticket-service:3000',       '/api/tickets'));
+    this.app.use(this._proxy(process.env.NOTIFICATION_SERVICE_URL || 'http://notification-service:3000', '/api/notifications'));
+    this.app.use(this._proxy(process.env.USER_PROFILE_SERVICE_URL || 'http://user-profile-service:3000', '/api/users'));
   }
 
   async cleanup() {
-    if (this.authMiddleware && this.authMiddleware.redisClient) {
-      await this.authMiddleware.redisClient.quit();
+    if (this.authMiddleware && this.authMiddleware.cleanup) {
+      await this.authMiddleware.cleanup();
     }
   }
 }

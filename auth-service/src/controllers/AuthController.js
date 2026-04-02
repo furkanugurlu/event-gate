@@ -5,6 +5,7 @@ class AuthController {
     // Bind methods
     this.login = this.login.bind(this);
     this.register = this.register.bind(this);
+    this.verify = this.verify.bind(this);
   }
 
   async register(req, res) {
@@ -24,6 +25,21 @@ class AuthController {
       }
       console.error('[Auth Service] Register error:', error);
       res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  async verify(req, res) {
+    try {
+      const authHeader = req.headers.authorization || '';
+      const token = authHeader.split(' ')[1];
+      const data = await this.service.verifyToken(token);
+      return res.status(200).json(data); // { username, role }
+    } catch (error) {
+      if (error.message === 'MissingToken' || error.message === 'InvalidToken') {
+        return res.status(401).json({ error: 'Invalid or expired token' });
+      }
+      console.error('[Auth Service] Verify error:', error);
+      return res.status(500).json({ error: 'Internal server error' });
     }
   }
 

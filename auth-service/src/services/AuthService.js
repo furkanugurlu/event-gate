@@ -37,6 +37,13 @@ class AuthService {
     throw new Error('InvalidCredentials');
   }
 
+  async verifyToken(token) {
+    if (!token) throw new Error('MissingToken');
+    const data = await this.repository.getTokenData(token);
+    if (!data) throw new Error('InvalidToken');
+    return data; // { username, role }
+  }
+
   async _generateAndSaveToken(username, role) {
     const token = crypto.randomBytes(32).toString('hex');
     // Save for 1 hour
