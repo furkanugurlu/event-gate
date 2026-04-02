@@ -79,9 +79,9 @@ class UserProfileController {
   async addPurchasedType(req, res) {
     try {
       const { userId } = req.params;
-      const { eventType } = req.body;
+      const { eventType, price } = req.body;
 
-      const profile = await this.service.addPurchasedType(userId, eventType);
+      const profile = await this.service.addPurchasedType(userId, eventType, price || 0);
 
       const profileResponse = profile.toJSON();
       profileResponse._links = {

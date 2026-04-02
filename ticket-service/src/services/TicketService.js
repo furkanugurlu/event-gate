@@ -33,6 +33,7 @@ class TicketService {
     const newTicket = await this.repository.create({ user_id, event_id });
 
     const eventType = event.type || null;
+    const price     = data.price || event.price || 0;
 
     const USER_PROFILE_SERVICE_URL =
       process.env.USER_PROFILE_SERVICE_URL || 'http://user-profile-service:3000';
@@ -42,7 +43,7 @@ class TicketService {
     // UserProfile güncelle: kullanıcının satın aldığı tür geçmişine ekle (fire-and-forget)
     if (eventType) {
       this.axios
-        .put(`${USER_PROFILE_SERVICE_URL}/api/users/${user_id}`, { eventType })
+        .put(`${USER_PROFILE_SERVICE_URL}/api/users/${user_id}`, { eventType, price })
         .then(() =>
           console.log(`[Ticket Service] Kullanıcı profili güncellendi: ${user_id} → ${eventType}`)
         )
