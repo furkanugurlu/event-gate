@@ -66,6 +66,8 @@ class App {
       target,
       changeOrigin: true,
       pathFilter,
+      proxyTimeout: 5000,
+      timeout: 5000,
       on: {
         error: (err, req, res) => {
           console.error(`[PROXY] Service unreachable: ${target} — ${err.message}`);
