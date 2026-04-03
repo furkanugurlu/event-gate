@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # ── Cache Katmanları ──────────────────────────────────────────────────────
   # Auth Service'in oturum deposu
