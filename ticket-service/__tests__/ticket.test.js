@@ -3,6 +3,7 @@ const TicketService = require('../src/services/TicketService');
 const mockRepo = {
   create: jest.fn(),
   findAll: jest.fn(),
+  findById: jest.fn(),
   deleteById: jest.fn(),
   deleteAll: jest.fn()
 };
@@ -73,6 +74,21 @@ describe('TicketService.createTicket', () => {
 
     const putCall = mockAxios.put.mock.calls[0];
     expect(putCall[1]).toMatchObject({ eventType: 'theater', price: 150 });
+  });
+});
+
+// ─── getTicketById ────────────────────────────────────────────────────────────
+
+describe('TicketService.getTicketById', () => {
+  test('bulunan bileti döner', async () => {
+    mockRepo.findById.mockResolvedValue({ _id: 't1', user_id: 'u1', event_id: 'eid1' });
+    const result = await service.getTicketById('t1');
+    expect(result._id).toBe('t1');
+  });
+
+  test('bulunamazsa TicketNotFound fırlatır', async () => {
+    mockRepo.findById.mockResolvedValue(null);
+    await expect(service.getTicketById('yok')).rejects.toThrow('TicketNotFound');
   });
 });
 

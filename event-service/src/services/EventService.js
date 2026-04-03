@@ -47,6 +47,24 @@ class EventService {
     return newEvent;
   }
 
+  async updateEvent(id, data) {
+    const validTypes = ['concert', 'theater', 'opera', 'festival', 'sports'];
+    const { name, date, capacity, type } = data;
+    if (type && !validTypes.includes(type)) {
+      throw new Error('ValidationError');
+    }
+
+    const updateData = {};
+    if (name)     updateData.name = name;
+    if (date)     updateData.date = date;
+    if (capacity) updateData.capacity = capacity;
+    if (type)     updateData.type = type;
+
+    const updated = await this.repository.updateById(id, updateData);
+    if (!updated) throw new Error('EventNotFound');
+    return updated;
+  }
+
   async deleteEvent(id) {
     const deletedEvent = await this.repository.deleteById(id);
     if (!deletedEvent) {

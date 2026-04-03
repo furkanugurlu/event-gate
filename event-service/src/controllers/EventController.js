@@ -6,6 +6,7 @@ class EventController {
     this.getAllEvents = this.getAllEvents.bind(this);
     this.getEventById = this.getEventById.bind(this);
     this.createEvent = this.createEvent.bind(this);
+    this.updateEvent = this.updateEvent.bind(this);
     this.deleteEvent = this.deleteEvent.bind(this);
     this.deleteAllEvents = this.deleteAllEvents.bind(this);
   }
@@ -73,6 +74,35 @@ class EventController {
         return res.status(400).json({ error: error.message || 'Missing required parameters' });
       }
       res.status(500).json({ error: 'Failed to create event' });
+    }
+  }
+
+  async updateEvent(req, res) {
+    try {
+      if (req.headers['x-user-role'] !== 'admin') {
+        return res.status(403).json({ error: 'Forbidden: Admins only can update events' });
+      }
+
+      const updated = await this.service.updateEvent(req.params.id, req.body);
+
+      const eventResponse = updated.toJSON();
+      eventResponse._links = {
+        self: `/api/events/${updated._id}`,
+        book_ticket: `/api/tickets`
+      };
+
+      res.status(200).json(eventResponse);
+    } catch (error) {
+      if (error.kind === 'ObjectId') {
+        return res.status(400).json({ error: 'Invalid ID format' });
+      }
+      if (error.message === 'EventNotFound') {
+        return res.status(404).json({ error: `Event with id ${req.params.id} not found` });
+      }
+      if (error.name === 'ValidationError' || error.message === 'ValidationError') {
+        return res.status(400).json({ error: error.message || 'Validation failed' });
+      }
+      res.status(500).json({ error: 'Failed to update event' });
     }
   }
 

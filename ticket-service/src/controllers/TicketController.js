@@ -5,6 +5,7 @@ class TicketController {
     // Bind methods
     this.createTicket = this.createTicket.bind(this);
     this.getAllTickets = this.getAllTickets.bind(this);
+    this.getTicketById = this.getTicketById.bind(this);
     this.deleteTicket = this.deleteTicket.bind(this);
     this.deleteAllTickets = this.deleteAllTickets.bind(this);
   }
@@ -35,6 +36,26 @@ class TicketController {
         return res.status(400).json({ error: error.message });
       }
       res.status(500).json({ error: 'Failed to create ticket' });
+    }
+  }
+
+  async getTicketById(req, res) {
+    try {
+      const ticket = await this.service.getTicketById(req.params.id);
+      const ticketResponse = ticket.toJSON();
+      ticketResponse._links = {
+        self: `/api/tickets/${ticket._id}`,
+        event: `/api/events/${ticket.event_id}`
+      };
+      res.status(200).json(ticketResponse);
+    } catch (error) {
+      if (error.kind === 'ObjectId') {
+        return res.status(400).json({ error: 'Invalid ID format' });
+      }
+      if (error.message === 'TicketNotFound') {
+        return res.status(404).json({ error: `Ticket with id ${req.params.id} not found` });
+      }
+      res.status(500).json({ error: 'Failed to fetch ticket' });
     }
   }
 

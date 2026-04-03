@@ -71,6 +71,12 @@ class TicketService {
     return newTicket;
   }
 
+  async getTicketById(id) {
+    const ticket = await this.repository.findById(id);
+    if (!ticket) throw new Error('TicketNotFound');
+    return ticket;
+  }
+
   async getAllTickets() {
     return await this.repository.findAll();
   }

@@ -4,6 +4,7 @@ const mockRepo = {
   create: jest.fn(),
   findAll: jest.fn(),
   findById: jest.fn(),
+  updateById: jest.fn(),
   deleteById: jest.fn(),
   deleteAll: jest.fn()
 };
@@ -59,6 +60,28 @@ describe('EventService.createEvent', () => {
     await service.createEvent(data);
     // fire-and-forget olduğu için sadece çağrıldığını kontrol et
     expect(mockAxios.post).toHaveBeenCalled();
+  });
+});
+
+// ─── updateEvent ─────────────────────────────────────────────────────────────
+
+describe('EventService.updateEvent', () => {
+  test('geçerli veriyle etkinliği günceller', async () => {
+    const updated = { _id: 'eid1', name: 'Rock Fest 2', type: 'festival', capacity: 200, date: new Date() };
+    mockRepo.updateById.mockResolvedValue(updated);
+
+    const result = await service.updateEvent('eid1', { name: 'Rock Fest 2', capacity: 200 });
+    expect(result._id).toBe('eid1');
+    expect(result.name).toBe('Rock Fest 2');
+  });
+
+  test('bulunamazsa EventNotFound fırlatır', async () => {
+    mockRepo.updateById.mockResolvedValue(null);
+    await expect(service.updateEvent('yok', { name: 'X' })).rejects.toThrow('EventNotFound');
+  });
+
+  test('geçersiz type ile güncelleme ValidationError fırlatır', async () => {
+    await expect(service.updateEvent('eid1', { type: 'sinema' })).rejects.toThrow('ValidationError');
   });
 });
 

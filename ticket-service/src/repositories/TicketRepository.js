@@ -11,6 +11,10 @@ class TicketRepository {
     return await this.model.find({});
   }
 
+  async findById(id) {
+    return await this.model.findById(id);
+  }
+
   async deleteById(id) {
     return await this.model.findByIdAndDelete(id);
   }
