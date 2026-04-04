@@ -4,6 +4,7 @@ const mockRepo = {
   create: jest.fn(),
   findAll: jest.fn(),
   findById: jest.fn(),
+  updateById: jest.fn(),
   deleteById: jest.fn(),
   deleteAll: jest.fn()
 };
@@ -89,6 +90,26 @@ describe('TicketService.getTicketById', () => {
   test('bulunamazsa TicketNotFound fırlatır', async () => {
     mockRepo.findById.mockResolvedValue(null);
     await expect(service.getTicketById('yok')).rejects.toThrow('TicketNotFound');
+  });
+});
+
+// ─── updateTicket ─────────────────────────────────────────────────────────────
+
+describe('TicketService.updateTicket', () => {
+  test('geçerli veriyle bileti günceller', async () => {
+    mockRepo.updateById.mockResolvedValue({ _id: 't1', user_id: 'u2', event_id: 'eid1', toJSON: () => ({ _id: 't1', user_id: 'u2', event_id: 'eid1' }) });
+    const result = await service.updateTicket('t1', { user_id: 'u2' });
+    expect(result._id).toBe('t1');
+    expect(mockRepo.updateById).toHaveBeenCalledWith('t1', { user_id: 'u2' });
+  });
+
+  test('hiçbir alan yoksa ValidationError fırlatır', async () => {
+    await expect(service.updateTicket('t1', {})).rejects.toThrow('ValidationError');
+  });
+
+  test('bilet bulunamazsa TicketNotFound fırlatır', async () => {
+    mockRepo.updateById.mockResolvedValue(null);
+    await expect(service.updateTicket('yok', { user_id: 'u1' })).rejects.toThrow('TicketNotFound');
   });
 });
 

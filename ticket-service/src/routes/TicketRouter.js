@@ -12,6 +12,7 @@ class TicketRouter {
     this.router.post('/', this.controller.createTicket);
     this.router.delete('/', this.controller.deleteAllTickets);
     this.router.get('/:id', this.controller.getTicketById);
+    this.router.put('/:id', this.controller.updateTicket);
     this.router.delete('/:id', this.controller.deleteTicket);
   }
 

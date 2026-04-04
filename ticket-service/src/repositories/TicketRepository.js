@@ -19,6 +19,10 @@ class TicketRepository {
     return await this.model.findByIdAndDelete(id);
   }
 
+  async updateById(id, data) {
+    return await this.model.findByIdAndUpdate(id, data, { new: true, runValidators: true });
+  }
+
   async deleteAll() {
     return await this.model.deleteMany({});
   }

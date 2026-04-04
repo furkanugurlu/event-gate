@@ -1,11 +1,12 @@
 class TicketController {
   constructor(ticketService) {
     this.service = ticketService;
-    
+
     // Bind methods
     this.createTicket = this.createTicket.bind(this);
     this.getAllTickets = this.getAllTickets.bind(this);
     this.getTicketById = this.getTicketById.bind(this);
+    this.updateTicket = this.updateTicket.bind(this);
     this.deleteTicket = this.deleteTicket.bind(this);
     this.deleteAllTickets = this.deleteAllTickets.bind(this);
   }
@@ -73,6 +74,26 @@ class TicketController {
       res.status(200).json(response);
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch tickets' });
+    }
+  }
+
+  async updateTicket(req, res) {
+    try {
+      const updated = await this.service.updateTicket(req.params.id, req.body);
+      const obj = updated.toJSON();
+      obj._links = {
+        self: `/api/tickets/${updated._id}`,
+        event: `/api/events/${updated.event_id}`
+      };
+      res.status(200).json(obj);
+    } catch (error) {
+      if (error.message.startsWith('ValidationError')) {
+        return res.status(400).json({ error: error.message });
+      }
+      if (error.message === 'TicketNotFound') {
+        return res.status(404).json({ error: 'Ticket not found' });
+      }
+      res.status(500).json({ error: 'Failed to update ticket' });
     }
   }
 

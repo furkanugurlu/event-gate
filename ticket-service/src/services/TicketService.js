@@ -81,6 +81,16 @@ class TicketService {
     return await this.repository.findAll();
   }
 
+  async updateTicket(id, data) {
+    const { user_id, event_id } = data;
+    if (!user_id && !event_id) {
+      throw new Error('ValidationError: At least one field (user_id or event_id) is required');
+    }
+    const updated = await this.repository.updateById(id, data);
+    if (!updated) throw new Error('TicketNotFound');
+    return updated;
+  }
+
   async deleteTicket(id) {
     const deleted = await this.repository.deleteById(id);
     if (!deleted) {
