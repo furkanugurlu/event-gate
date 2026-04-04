@@ -62,7 +62,15 @@ class TicketController {
   async getAllTickets(req, res) {
     try {
       const tickets = await this.service.getAllTickets();
-      res.status(200).json(tickets);
+      const response = tickets.map(ticket => {
+        const obj = ticket.toJSON();
+        obj._links = {
+          self:  `/api/tickets/${ticket._id}`,
+          event: `/api/events/${ticket.event_id}`
+        };
+        return obj;
+      });
+      res.status(200).json(response);
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch tickets' });
     }

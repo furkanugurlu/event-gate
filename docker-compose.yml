@@ -227,6 +227,22 @@ services:
       - redis
       - dispatcher-redis
 
+  # ── Yük Testi (docker-compose --profile testing run --rm k6) ─────────────
+  k6:
+    image: grafana/k6:latest
+    profiles:
+      - testing
+    networks:
+      - internal
+    volumes:
+      - .:/scripts
+    working_dir: /scripts
+    environment:
+      - BASE_URL=http://dispatcher:3000
+    command: run load-test.js
+    depends_on:
+      - dispatcher
+
 networks:
   internal:
     driver: bridge

@@ -1,7 +1,10 @@
 class EventService {
-  constructor(eventRepository, axiosInstance) {
+  constructor(eventRepository, axiosInstance, notificationServiceUrl) {
     this.repository = eventRepository;
     this.axios = axiosInstance;
+    this.notificationServiceUrl = notificationServiceUrl
+      || process.env.NOTIFICATION_SERVICE_URL
+      || 'http://notification-service:3000';
   }
 
   async getAllEvents() {
@@ -27,11 +30,8 @@ class EventService {
 
     // Yeni etkinlik oluşturulunca Notification Service'e bildir (fire-and-forget)
     // Bildirim başarısız olsa bile etkinlik oluşturma işlemi tamamlanır
-    const NOTIFICATION_SERVICE_URL =
-      process.env.NOTIFICATION_SERVICE_URL || 'http://notification-service:3000';
-
     this.axios
-      .post(`${NOTIFICATION_SERVICE_URL}/api/notifications`, {
+      .post(`${this.notificationServiceUrl}/api/notifications`, {
         eventId: String(newEvent._id),
         eventType: type,
         eventName: name,

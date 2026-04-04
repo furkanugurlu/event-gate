@@ -20,7 +20,12 @@ class NotificationController {
 
       if (type === 'NEW_EVENT') {
         result = await this.service.createNewEventNotifications(req.body);
-        return res.status(201).json(result);
+        const mapped = result.map(n => {
+          const obj = n.toJSON();
+          obj._links = { self: `/api/notifications/${n._id}`, event: `/api/events/${n.eventId}` };
+          return obj;
+        });
+        return res.status(201).json(mapped);
       }
 
       // Varsayılan: TICKET_PURCHASED

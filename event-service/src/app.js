@@ -27,7 +27,8 @@ class App {
   setupDependencies() {
     // Dependency Injection
     const repository = new EventRepository(Event);
-    const service = new EventService(repository, axios);
+    const notificationUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://notification-service:3000';
+    const service = new EventService(repository, axios, notificationUrl);
     const controller = new EventController(service);
     const router = new EventRouter(controller);
 
